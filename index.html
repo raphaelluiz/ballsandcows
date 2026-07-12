@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-br"><meta charset="utf-8"><title>Balls and Cows Solver</title>
+
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#2b2b2b;
+    color:#e8e8e8;
+    max-width:800px;
+    margin:20px auto;
+    padding:20px;
+    font-size:14px;
+}
+
+h2{
+    color:#ffffff;
+    font-size:22px;
+    margin:0 0 15px 0;
+}
+
+h3{
+    color:#ffffff;
+    font-size:16px;
+    margin:20px 0 10px;
+}
+
+div{
+    margin:8px 0;
+}
+
+input{
+    accent-color:#5fa8ff;
+}
+
+button{
+    padding:6px 12px;
+    margin:3px;
+    background:#444;
+    color:#fff;
+    border:1px solid #666;
+    border-radius:5px;
+    cursor:pointer;
+    transition:.15s;
+    font-size:13px;
+}
+
+button:hover{
+    background:#555;
+}
+
+table{
+    border-collapse:collapse;
+    width:100%;
+    margin-top:10px;
+    font-size:13px;
+}
+
+th{
+    background:#3d3d3d;
+}
+
+td,th{
+    border:1px solid #666;
+    padding:4px;
+    text-align:center;
+}
+
+tr:nth-child(even){
+    background:#343434;
+}
+
+pre{
+    background:#1f1f1f;
+    border:1px solid #555;
+    padding:8px;
+    color:#8cff8c;
+    border-radius:5px;
+    white-space:pre-wrap;
+    word-break:break-word;
+    font-size:13px;
+    line-height:1.4;
+}
+
+#pick{
+    display:inline-block;
+    font-size:24px;
+    font-weight:bold;
+    color:#7ec8ff;
+    background:#1f1f1f;
+    border:1px solid #555;
+    border-radius:6px;
+    padding:6px 14px;
+    min-width:70px;
+    text-align:center;
+}
+
+#left{
+    color:#ffd966;
+    font-weight:bold;
+    font-size:15px;
+}
+
+label{
+    margin-right:10px;
+    font-size:14px;
+}
+</style>
+
+<h2>Solver Balls and Cows (3 dígitos sem repetição)</h2>
+<div><b>Próximo chute:</b> <span id=pick></span></div><br>
+<div><b>Strike:</b>
+<label><input type="radio" name="s" value="0" checked>0</label>
+<label><input type="radio" name="s" value="1">1</label>
+<label><input type="radio" name="s" value="2">2</label>
+</div>
+<div><b>Ball:</b>
+<label><input type="radio" name="b" value="0" checked>0</label>
+<label><input type="radio" name="b" value="1">1</label>
+<label><input type="radio" name="b" value="2">2</label>
+<label><input type="radio" name="b" value="3">3</label>
+</div>
+
+<button type="button" onclick="out()">Out (0/0)</button>
+<button onclick="add()">Registrar resultado</button>
+<button onclick="resetGame()">Reiniciar</button>
+<button onclick="undo()">Voltar</button>
+<p>Possibilidades restantes: <span id=left></span></p>
+<table><thead><tr><th>#</th><th>Chute</th><th>S</th><th>B</th></tr></thead><tbody id=hist></tbody></table>
+<h3>Possibilidades</h3><pre id=list></pre>
+<script>
+let all=[];
+for(let a=0;a<10;a++)for(let b=0;b<10;b++)for(let c=0;c<10;c++)
+ if(a!=b&&a!=c&&b!=c)all.push(""+a+b+c);
+let poss=[...all],current="";
+let history = [];
+function score(g,s){
+ let st=0,ba=0;
+ for(let i=0;i<3;i++){
+   if(g[i]==s[i]) st++;
+   else if(s.includes(g[i])) ba++;
+ }
+ return st+","+ba;
+}
+function choose(){
+
+    let bestScore = Infinity;
+    let melhores = [];
+
+    let candidates = poss.length > 150 ? all : poss;
+
+    for(let g of candidates){
+
+        let map = {};
+
+        for(let s of poss){
+            let k = score(g,s);
+            map[k] = (map[k]||0)+1;
+        }
+
+        let worst = 0;
+
+        for(let k in map){
+            if(map[k] > worst)
+                worst = map[k];
+        }
+
+        if(worst < bestScore){
+
+            bestScore = worst;
+            melhores = [g];
+
+        }else if(worst == bestScore){
+
+            melhores.push(g);
+
+        }
+
+    }
+
+    current = melhores[Math.floor(Math.random()*melhores.length)];
+
+    pick.textContent = current;
+    left.textContent = poss.length;
+
+    list.textContent =
+        poss.slice(0,200).join(" ") +
+        (poss.length>200 ? " ..." : "");
+
+}
+function add(){
+ let st=+document.querySelector('input[name=s]:checked').value,ba=+document.querySelector('input[name=b]:checked').value;
+ let tr=document.createElement("tr");
+ tr.innerHTML="<td>"+(hist.children.length+1)+"</td><td>"+current+"</td><td>"+st+"</td><td>"+ba+"</td>";
+ hist.appendChild(tr);
+ history.push({
+	poss: [...poss],
+	current: current
+ });
+ poss=poss.filter(x=>score(current,x)==st+","+ba);
+ if(poss.length==1){pick.textContent=poss[0]+" (RESPOSTA)";}
+ else if(poss.length==0){pick.textContent="Nenhuma possibilidade. Confira os dados.";}
+ else choose();
+}
+
+function out(){
+ document.querySelector('input[name=s][value="0"]').checked=true;
+ document.querySelector('input[name=b][value="0"]').checked=true;
+}
+
+function undo(){
+
+    if(history.length===0)
+        return;
+
+    let last = history.pop();
+
+    poss = [...last.poss];
+    current = last.current;
+
+    if(hist.lastChild)
+        hist.removeChild(hist.lastChild);
+
+    pick.textContent = current;
+    left.textContent = poss.length;
+
+    list.textContent =
+        poss.slice(0,200).join(" ") +
+        (poss.length>200 ? " ..." : "");
+
+    out();
+
+}
+
+function resetGame(){
+	history = [];
+    poss = [...all];
+    hist.innerHTML = "";
+    out(); // Seleciona Strike = 0 e Ball = 0
+    choose();
+}
+
+window.onload = function(){
+    out();
+    resetGame();
+};
+
+</script></html>
