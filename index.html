@@ -189,19 +189,37 @@ function choose(){
         (poss.length>200 ? " ..." : "");
 
 }
+
 function add(){
- let st=+document.querySelector('input[name=s]:checked').value,ba=+document.querySelector('input[name=b]:checked').value;
- let tr=document.createElement("tr");
- tr.innerHTML="<td>"+(hist.children.length+1)+"</td><td>"+current+"</td><td>"+st+"</td><td>"+ba+"</td>";
- hist.appendChild(tr);
- history.push({
-	poss: [...poss],
-	current: current
- });
- poss=poss.filter(x=>score(current,x)==st+","+ba);
- if(poss.length==1){pick.textContent=poss[0]+" (RESPOSTA)";}
- else if(poss.length==0){pick.textContent="Nenhuma possibilidade. Confira os dados.";}
- else choose();
+    let st = +document.querySelector('input[name=s]:checked').value,
+	ba = +document.querySelector('input[name=b]:checked').value;
+    let tr = document.createElement("tr");
+    tr.innerHTML =
+        "<td>" + (hist.children.length+1) + "</td>" +
+        "<td>" + current + "</td>" +
+        "<td>" + st + "</td>" +
+        "<td>" + ba + "</td>";
+    hist.appendChild(tr);
+    history.push({
+        poss: [...poss],
+        current: current
+    });
+    poss = poss.filter(x => score(current,x) == st + "," + ba);
+
+    if(poss.length == 1){
+        pick.textContent = poss[0] + " (RESPOSTA)";
+        left.textContent = "1";
+        list.textContent = poss[0];
+
+    }
+    else if(poss.length == 0){
+        pick.textContent = "Nenhuma possibilidade. Confira os dados.";
+        left.textContent = "0";
+        list.textContent = "";
+    }
+    else{
+        choose();
+    }
 }
 
 function out(){
